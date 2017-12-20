@@ -17,6 +17,10 @@
 # ${CMAKE_CURRENT_SOURCE_DIR}/external
 #===============================================================================
 
+if(EMSCRIPTEN_BUILD)
+    return()
+endif()
+
 if(MKL_cmake_included)
     return()
 endif()

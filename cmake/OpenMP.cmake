@@ -16,6 +16,10 @@
 # Manage OpenMP-related compiler flags
 #===============================================================================
 
+if(EMSCRIPTEN_BUILD)
+    return()
+endif()
+
 if(OpenMP_cmake_included)
     return()
 endif()

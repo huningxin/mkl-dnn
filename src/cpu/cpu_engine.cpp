@@ -23,6 +23,7 @@
 #include "cpu_concat.hpp"
 #include "cpu_sum.hpp"
 
+#ifndef __EMSCRIPTEN__
 #include "cpu/jit_avx512_common_1x1_convolution.hpp"
 #include "cpu/jit_avx512_common_convolution_winograd.hpp"
 #include "cpu/jit_avx512_common_convolution.hpp"
@@ -32,22 +33,33 @@
 #include "cpu/jit_avx512_core_u8s8s32x_convolution.hpp"
 #include "cpu/jit_sse42_convolution.hpp"
 #include "cpu/gemm_convolution.hpp"
+#endif
 #include "cpu/ref_convolution.hpp"
+#ifndef __EMSCRIPTEN__
 #include "cpu/jit_uni_eltwise.hpp"
+#endif
 #include "cpu/ref_eltwise.hpp"
 #include "cpu/ref_softmax.hpp"
+#ifndef __EMSCRIPTEN__
 #include "cpu/jit_uni_pooling.hpp"
 #include "cpu/jit_avx512_core_i8i8_pooling.hpp"
+#endif
 #include "cpu/ref_pooling.hpp"
 #include "cpu/nchw_pooling.hpp"
+#ifndef __EMSCRIPTEN__
 #include "cpu/jit_avx512_common_lrn.hpp"
 #include "cpu/jit_uni_lrn.hpp"
+#endif
 #include "cpu/ref_lrn.hpp"
+#ifndef __EMSCRIPTEN__
 #include "cpu/jit_uni_batch_normalization.hpp"
+#endif
 #include "cpu/ref_batch_normalization.hpp"
 #include "cpu/ref_inner_product.hpp"
+#ifndef __EMSCRIPTEN__
 #include "cpu/gemm_inner_product.hpp"
 #include "cpu/jit_uni_inner_product.hpp"
+#endif
 
 namespace mkldnn {
 namespace impl {
@@ -79,6 +91,7 @@ using namespace mkldnn::impl::data_type;
 #define INSTANCE(...) &primitive_desc_t::create<__VA_ARGS__::pd_t>
 static const pd_create_f cpu_impl_list[] = {
     /* conv */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_avx512_common_1x1_convolution_fwd_f32_t),
     INSTANCE(jit_avx512_common_1x1_convolution_bwd_data_f32_t),
     INSTANCE(jit_avx512_common_1x1_convolution_bwd_weights_t),
@@ -107,16 +120,19 @@ static const pd_create_f cpu_impl_list[] = {
     INSTANCE(jit_avx2_gemm_convolution_fwd_t),
     INSTANCE(jit_avx2_gemm_convolution_bwd_data_t),
     INSTANCE(jit_avx2_gemm_convolution_bwd_weights_t),
+#endif
     INSTANCE(ref_convolution_fwd_t<f32>),
     INSTANCE(ref_convolution_bwd_data_t<f32, f32, f32, f32>),
     INSTANCE(ref_convolution_bwd_weights_t<f32, f32, f32, f32>),
     /* conv (int) */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_avx512_common_convolution_fwd_t<s16, s16, s32>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<false, f32>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<false, s32>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<false, s8>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<false, u8>),
     INSTANCE(jit_avx512_common_convolution_bwd_data_t<s16, s16, s32>),
+#endif
     INSTANCE(ref_convolution_fwd_t<s16,s16, s32, s32>),
     INSTANCE(ref_convolution_fwd_t<u8, s8, s32, s32>),
     INSTANCE(ref_convolution_fwd_t<u8, s8, s8, s32>),
@@ -124,12 +140,14 @@ static const pd_create_f cpu_impl_list[] = {
     INSTANCE(ref_convolution_bwd_data_t<s32, s16, s16, s32>),
     INSTANCE(ref_convolution_bwd_weights_t<s16, s32, s16, s32>),
     /* eltwise */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_uni_eltwise_fwd_t<avx512_common>),
     INSTANCE(jit_uni_eltwise_bwd_t<avx512_common>),
     INSTANCE(jit_uni_eltwise_fwd_t<avx2>),
     INSTANCE(jit_uni_eltwise_bwd_t<avx2>),
     INSTANCE(jit_uni_eltwise_fwd_t<sse42>),
     INSTANCE(jit_uni_eltwise_bwd_t<sse42>),
+#endif
     INSTANCE(ref_eltwise_fwd_t<f32>),
     INSTANCE(ref_eltwise_bwd_t<f32>),
     /* eltwise (int) */
@@ -142,18 +160,22 @@ static const pd_create_f cpu_impl_list[] = {
     /* softmax */
     INSTANCE(ref_softmax_fwd_t<f32>),
     /* pool */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_uni_pooling_fwd_t<avx512_common>),
     INSTANCE(jit_uni_pooling_bwd_t<avx512_common>),
     INSTANCE(jit_uni_pooling_fwd_t<avx2>),
     INSTANCE(jit_uni_pooling_bwd_t<avx2>),
     INSTANCE(jit_uni_pooling_fwd_t<sse42>),
     INSTANCE(jit_uni_pooling_bwd_t<sse42>),
+#endif
     INSTANCE(nchw_pooling_fwd_t<f32>),
     INSTANCE(nchw_pooling_bwd_t<f32>),
     INSTANCE(ref_pooling_fwd_t<f32>),
     INSTANCE(ref_pooling_bwd_t<f32>),
     /* pool (int) */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_avx512_core_i8i8_pooling_fwd_t),
+#endif
     INSTANCE(ref_pooling_fwd_t<s32>),
     INSTANCE(ref_pooling_fwd_t<s16, s32>),
     INSTANCE(ref_pooling_fwd_t<s8, s32>),
@@ -161,22 +183,27 @@ static const pd_create_f cpu_impl_list[] = {
     INSTANCE(ref_pooling_bwd_t<s32>),
     INSTANCE(ref_pooling_bwd_t<s16, s32>),
     /* lrn */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_avx512_common_lrn_fwd_t),
     INSTANCE(jit_avx512_common_lrn_bwd_t),
     INSTANCE(jit_uni_lrn_fwd_t<avx2>),
     INSTANCE(jit_uni_lrn_bwd_t<avx2>),
     INSTANCE(jit_uni_lrn_fwd_t<sse42>),
+#endif
     INSTANCE(ref_lrn_fwd_t<f32>),
     INSTANCE(ref_lrn_bwd_t<f32>),
     /* batch normalization */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_uni_batch_normalization_fwd_t<avx512_common>),
     INSTANCE(jit_uni_batch_normalization_bwd_t<avx512_common>),
     INSTANCE(jit_uni_batch_normalization_fwd_t<avx2>),
     INSTANCE(jit_uni_batch_normalization_bwd_t<avx2>),
     INSTANCE(jit_uni_batch_normalization_fwd_t<sse42>),
+#endif
     INSTANCE(ref_batch_normalization_fwd_t<f32>),
     INSTANCE(ref_batch_normalization_bwd_t<f32>),
     /* inner product */
+#ifndef __EMSCRIPTEN__
     INSTANCE(gemm_inner_product_fwd_t<f32>),
     INSTANCE(gemm_inner_product_bwd_data_t<f32>),
     INSTANCE(gemm_inner_product_bwd_weights_t<f32>),
@@ -186,6 +213,7 @@ static const pd_create_f cpu_impl_list[] = {
     INSTANCE(jit_uni_inner_product_fwd_t<avx2>),
     INSTANCE(jit_uni_inner_product_bwd_weights_t<avx2>),
     INSTANCE(jit_uni_inner_product_bwd_data_t<avx2>),
+#endif
     INSTANCE(ref_inner_product_fwd_t<f32>),
     INSTANCE(ref_inner_product_bwd_data_t<f32, f32, f32, f32>),
     INSTANCE(ref_inner_product_bwd_weights_t<f32>),
@@ -194,6 +222,7 @@ static const pd_create_f cpu_impl_list[] = {
     INSTANCE(ref_inner_product_bwd_data_t<s32, s16, s16, s32>),
     INSTANCE(ref_inner_product_fwd_t<u8, s8, u8, s32>),
     /* conv_eltwise */
+#ifndef __EMSCRIPTEN__
     INSTANCE(jit_avx512_common_convolution_winograd_relu_t),
     INSTANCE(jit_avx512_common_1x1_convolution_relu_f32_t),
     INSTANCE(jit_avx512_common_1x1_convolution_relu_s16s16s32_t),
@@ -205,13 +234,16 @@ static const pd_create_f cpu_impl_list[] = {
     INSTANCE(mkl_gemm_convolution_relu_t),
     INSTANCE(jit_avx512_common_gemm_convolution_relu_t),
     INSTANCE(jit_avx2_gemm_convolution_relu_t),
+#endif
     INSTANCE(ref_convolution_relu_t<f32>),
     /* conv_eltwise (int) */
+#ifndef __EMSCRIPTEN__
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<true, f32>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<true, s32>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<true, s8>),
     INSTANCE(_jit_avx512_core_u8s8s32x_convolution_fwd_t<true, u8>),
     INSTANCE(jit_avx512_common_convolution_relu_t<s16, s16, s32>),
+#endif
     INSTANCE(ref_convolution_relu_t<s16, s16, s32, s32>),
     INSTANCE(ref_convolution_relu_t<u8, s8, s32, s32>),
     INSTANCE(ref_convolution_relu_t<u8, s8, s8, s32>),

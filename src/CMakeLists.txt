@@ -26,6 +26,29 @@ file(GLOB_RECURSE SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
     )
+
+option(EMSCRIPTEN_BUILD "Emscripten build" OFF)
+if(EMSCRIPTEN_BUILD)
+FOREACH(item ${SOURCES})
+  IF(${item} MATCHES ".*jit.*")
+    LIST(REMOVE_ITEM SOURCES ${item})
+  ENDIF(${item} MATCHES ".*jit.*")
+  IF(${item} MATCHES ".*gemm.*")
+    LIST(REMOVE_ITEM SOURCES ${item})
+  ENDIF(${item} MATCHES ".*gemm.*")
+  IF(${item} MATCHES ".*cpu_reducer.*")
+    LIST(REMOVE_ITEM SOURCES ${item})
+  ENDIF(${item} MATCHES ".*cpu_reducer.*")
+  IF(${item} MATCHES ".*cpu_barrier.*")
+    LIST(REMOVE_ITEM SOURCES ${item})
+  ENDIF(${item} MATCHES ".*cpu_barrier.*")
+  IF(${item} MATCHES ".*cpu_reorder.*")
+    LIST(REMOVE_ITEM SOURCES ${item})
+  ENDIF(${item} MATCHES ".*cpu_reorder.*")
+ENDFOREACH(item)
+MESSAGE(STATUS "${SOURCES}")
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/common
