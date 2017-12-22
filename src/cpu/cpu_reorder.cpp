@@ -20,7 +20,9 @@
 #include "cpu_memory.hpp"
 #include "type_helpers.hpp"
 
+#ifndef __EMSCRIPTEN__
 #include "cpu/jit_reorder.hpp"
+#endif
 #include "cpu/simple_reorder.hpp"
 
 namespace mkldnn {
@@ -99,16 +101,20 @@ static const rpd_create_f cpu_reorder_impl_list[] = {
     simple_reorder_t<f32, goihw, f32, gOihw16o, fmt_order::reverse>::pd_t::create,
     simple_reorder_t<f32, gOihw16o, f32, gOhwi16o, fmt_order::keep>::pd_t::create,
     simple_reorder_t<f32, gOihw16o, f32, gOhwi16o, fmt_order::reverse>::pd_t::create,
+#ifndef __EMSCRIPTEN__
     jit_reorder_t<f32, OIhw8i8o, f32, OIhw8o8i, fmt_order::keep>::pd_t::create,
     jit_reorder_t<f32, OIhw8i8o, f32, OIhw8o8i, fmt_order::reverse>::pd_t::create,
+#endif
     simple_reorder_t<f32, OIhw8i8o, f32, OIhw8o8i, fmt_order::keep>::pd_t::create,
     simple_reorder_t<f32, OIhw8i8o, f32, OIhw8o8i, fmt_order::reverse>::pd_t::create,
     simple_reorder_t<f32, OIhw16i16o, f32, OIhw16o16i, fmt_order::keep>::pd_t::create,
     simple_reorder_t<f32, OIhw16i16o, f32, OIhw16o16i, fmt_order::reverse>::pd_t::create,
     simple_reorder_t<f32, OIhw16i16o, f32, IOhw16o16i, fmt_order::keep>::pd_t::create,
     simple_reorder_t<f32, OIhw16i16o, f32, IOhw16o16i, fmt_order::reverse>::pd_t::create,
+#ifndef __EMSCRIPTEN__
     jit_reorder_t<f32, gOIhw8i8o, f32, gOIhw8o8i, fmt_order::keep>::pd_t::create,
     jit_reorder_t<f32, gOIhw8i8o, f32, gOIhw8o8i, fmt_order::reverse>::pd_t::create,
+#endif
     simple_reorder_t<f32, gOIhw8i8o, f32, gOIhw8o8i, fmt_order::keep>::pd_t::create,
     simple_reorder_t<f32, gOIhw8i8o, f32, gOIhw8o8i, fmt_order::reverse>::pd_t::create,
     simple_reorder_t<f32, gOIhw16i16o, f32, gOIhw16o16i, fmt_order::keep>::pd_t::create,

@@ -66,5 +66,6 @@ include_directories(include)
 add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(tests)
+add_subdirectory(binding)
 
 install(FILES LICENSE DESTINATION share/doc/${LIB_NAME})
