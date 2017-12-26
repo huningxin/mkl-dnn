@@ -20,9 +20,9 @@ namespace utils {
 
     intptr_t mkldnn_engine_create_helper(int kind, size_t index) {
         mkldnn_engine_t aengine;
-        mkldnn_status_t status = mkldnn_engine_create(&aengine, (mkldnn_engine_kind_t)kind, index);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        mkldnn_status_t s = mkldnn_engine_create(&aengine, (mkldnn_engine_kind_t)kind, index);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)aengine;
@@ -37,10 +37,10 @@ namespace utils {
         mkldnn_memory_desc_t* memory_desc = new mkldnn_memory_desc_t;
         mkldnn_dims_t dims;
         int ndims = dimsFromJSArray(dims, js_dims);
-        mkldnn_status_t status = mkldnn_memory_desc_init(
+        mkldnn_status_t s = mkldnn_memory_desc_init(
             memory_desc, ndims, dims, (mkldnn_data_type_t)data_type, (mkldnn_memory_format_t)format);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             delete memory_desc;
             return 0;
         }
@@ -54,10 +54,10 @@ namespace utils {
 
     intptr_t mkldnn_memory_primitive_desc_create_helper(intptr_t memory_desc, intptr_t engine) {
         mkldnn_primitive_desc_t primitive_desc;
-        mkldnn_status_t status = mkldnn_memory_primitive_desc_create(
+        mkldnn_status_t s = mkldnn_memory_primitive_desc_create(
             &primitive_desc, (const mkldnn_memory_desc_t*)memory_desc, (mkldnn_engine_t)engine);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)primitive_desc;
@@ -79,12 +79,12 @@ namespace utils {
         for (int i = 0; i < outputs_vec.size(); ++i) {
             outputs.push_back((const_mkldnn_primitive_t)outputs_vec[i]);
         }
-        mkldnn_status_t status = mkldnn_primitive_create(
+        mkldnn_status_t s = mkldnn_primitive_create(
             &primitive, (const_mkldnn_primitive_desc_t)primitive_desc,
             inputs.empty() ? NULL : inputs.data(),
             outputs.empty() ? NULL : outputs.data());
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)primitive;
@@ -96,9 +96,9 @@ namespace utils {
 
     intptr_t mkldnn_memory_get_data_handle_helper(intptr_t memory) {
         void* handle;
-        mkldnn_status_t status = mkldnn_memory_get_data_handle((const_mkldnn_primitive_t)memory, &handle);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        mkldnn_status_t s = mkldnn_memory_get_data_handle((const_mkldnn_primitive_t)memory, &handle);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)handle;
@@ -116,13 +116,13 @@ namespace utils {
        dimsFromJSArray(strides, js_strides);
        dimsFromJSArray(padding_l, js_padding_l);
        dimsFromJSArray(padding_r, js_padding_r);
-       mkldnn_status_t status = mkldnn_convolution_forward_desc_init(
+       mkldnn_status_t s = mkldnn_convolution_forward_desc_init(
            conv_desc, (mkldnn_prop_kind_t)prop_kind, (mkldnn_alg_kind_t)alg_kind,
            (const mkldnn_memory_desc_t*)src_desc, (const mkldnn_memory_desc_t*)weights_desc,
            (const mkldnn_memory_desc_t*)bias_desc, (const mkldnn_memory_desc_t*)dst_desc,
            strides, padding_l, padding_r, (mkldnn_padding_kind_t)padding_kind);
-       if (status != mkldnn_success) {
-           LOG_STATUS(status);
+       if (s != mkldnn_success) {
+           LOG_STATUS(s);
            delete conv_desc;
            return 0;
        }
@@ -136,11 +136,11 @@ namespace utils {
 
     intptr_t mkldnn_primitive_desc_create_helper(intptr_t op_desc, intptr_t engine, intptr_t hint_forward_primitive_desc) {
         mkldnn_primitive_desc_t primitive_desc;
-        mkldnn_status_t status = mkldnn_primitive_desc_create(
+        mkldnn_status_t s = mkldnn_primitive_desc_create(
             &primitive_desc, (const_mkldnn_op_desc_t)op_desc, (mkldnn_engine_t)engine,
             (const_mkldnn_primitive_desc_t)hint_forward_primitive_desc);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)primitive_desc;
@@ -152,9 +152,9 @@ namespace utils {
 
     intptr_t mkldnn_primitive_get_primitive_desc_helper(intptr_t primitive) {
         const_mkldnn_primitive_desc_t primitive_desc;
-        mkldnn_status_t status = mkldnn_primitive_get_primitive_desc((const_mkldnn_primitive_t)primitive, &primitive_desc);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        mkldnn_status_t s = mkldnn_primitive_get_primitive_desc((const_mkldnn_primitive_t)primitive, &primitive_desc);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)primitive_desc;
@@ -166,10 +166,10 @@ namespace utils {
 
     intptr_t mkldnn_reorder_primitive_desc_create_helper(intptr_t input, intptr_t output) {
         mkldnn_primitive_desc_t reorder_primitive_desc;
-        mkldnn_status_t status = mkldnn_reorder_primitive_desc_create(
+        mkldnn_status_t s = mkldnn_reorder_primitive_desc_create(
             &reorder_primitive_desc, (const_mkldnn_primitive_desc_t)input, (const_mkldnn_primitive_desc_t)output);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)reorder_primitive_desc;
@@ -177,9 +177,9 @@ namespace utils {
 
     intptr_t mkldnn_stream_create_helper(int stream_kind) {
         mkldnn_stream_t stream;
-        mkldnn_status_t status = mkldnn_stream_create(&stream, (mkldnn_stream_kind_t)stream_kind);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        mkldnn_status_t s = mkldnn_stream_create(&stream, (mkldnn_stream_kind_t)stream_kind);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)stream;
@@ -209,13 +209,48 @@ namespace utils {
 
     intptr_t mkldnn_eltwise_forward_desc_create_helper(int prop_kind, int alg_kind, intptr_t data_desc, float alpha, float beta) {
         mkldnn_eltwise_desc_t* eltwise_desc = new mkldnn_eltwise_desc_t;
-        mkldnn_status_t status = mkldnn_eltwise_forward_desc_init(eltwise_desc, (mkldnn_prop_kind_t)prop_kind,
+        mkldnn_status_t s = mkldnn_eltwise_forward_desc_init(eltwise_desc, (mkldnn_prop_kind_t)prop_kind,
             (mkldnn_alg_kind_t)alg_kind, (const mkldnn_memory_desc_t*)data_desc, alpha, beta);
-        if (status != mkldnn_success) {
-            LOG_STATUS(status);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
             return 0;
         }
         return (intptr_t)eltwise_desc;
+    }
+
+    intptr_t mkldnn_lrn_forward_desc_create_helper(int prop_kind, int alg_kind, intptr_t data_desc, int local_size, float alpha, float beta, float k) {
+        mkldnn_lrn_desc_t *lrn_desc = new mkldnn_lrn_desc_t;
+        mkldnn_status_t s = mkldnn_lrn_forward_desc_init(
+            lrn_desc, (mkldnn_prop_kind_t)prop_kind, (mkldnn_alg_kind_t)alg_kind, (const mkldnn_memory_desc_t*)data_desc, local_size, alpha, beta, k);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
+            delete lrn_desc;
+            return 0;
+        }
+        return (intptr_t)lrn_desc;
+    }
+
+    int mkldnn_memory_primitive_desc_get_size_helper(intptr_t memory_primitive_desc) {
+        return (int)mkldnn_memory_primitive_desc_get_size((const_mkldnn_primitive_desc_t)memory_primitive_desc);
+    }
+
+    intptr_t mkldnn_pooling_forward_desc_create_helper(int prop_kind, int alg_kind, intptr_t src_desc,
+        intptr_t dst_desc, val js_strides, val js_kernel, val js_padding_l, val js_padding_r, int padding_kind) {
+        mkldnn_pooling_desc_t *pool_desc = new mkldnn_pooling_desc_t;
+        mkldnn_dims_t strides, kernel, padding_l, padding_r;
+        dimsFromJSArray(strides, js_strides);
+        dimsFromJSArray(kernel, js_kernel);
+        dimsFromJSArray(padding_l, js_padding_l);
+        dimsFromJSArray(padding_r, js_padding_r);
+        mkldnn_status_t s = mkldnn_pooling_forward_desc_init(
+                pool_desc, (mkldnn_prop_kind_t)prop_kind, (mkldnn_alg_kind_t)alg_kind, (const mkldnn_memory_desc_t*)src_desc,
+                (const mkldnn_memory_desc_t*)dst_desc, strides, kernel, padding_l, padding_r, (mkldnn_padding_kind_t)padding_kind);
+        if (s != mkldnn_success) {
+            LOG_STATUS(s);
+            delete pool_desc;
+            return 0;
+        }
+        return (intptr_t)pool_desc;
     }
 }
 
@@ -343,4 +378,7 @@ EMSCRIPTEN_BINDINGS(mkldnn)
     function("mkldnn_stream_destroy", &utils::mkldnn_stream_destroy_helper, allow_raw_pointers());
     function("mkldnn_primitive_desc_query_memory_d", &utils::mkldnn_primitive_desc_query_memory_d_helper, allow_raw_pointers());
     function("mkldnn_eltwise_forward_desc_create", &utils::mkldnn_eltwise_forward_desc_create_helper, allow_raw_pointers());
+    function("mkldnn_lrn_forward_desc_create", &utils::mkldnn_lrn_forward_desc_create_helper, allow_raw_pointers());
+    function("mkldnn_memory_primitive_desc_get_size", &utils::mkldnn_memory_primitive_desc_get_size_helper, allow_raw_pointers());
+    function("mkldnn_pooling_forward_desc_create", &utils::mkldnn_pooling_forward_desc_create_helper, allow_raw_pointers());
 }

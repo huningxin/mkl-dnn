@@ -141,8 +141,96 @@ function main() {
   /* finally create a relu primitive */
   let relu = mkldnn.mkldnn_primitive_create(relu_pd, [conv_internal_dst_memory], [relu_dst_memory]);
 
+  /* AlexNet: lrn
+   * {BATCH, 96, 55, 55} -> {BATCH, 96, 55, 55}
+   * local size: 5
+   * alpha: 0.0001
+   * beta: 0.75
+   */
+  let local_size = 5;
+  let alpha = 0.0001;
+  let beta = 0.75;
+  let k = 1.0;
+
+  let lrn_dst_sizes = relu_dst_sizes;
+
+  let lrn_dst_buffer = mkldnn._malloc(product(lrn_dst_sizes)*Float32Array.BYTES_PER_ELEMENT);
+  mkldnn._memset(lrn_dst_buffer, 0, product(lrn_dst_sizes)*Float32Array.BYTES_PER_ELEMENT);
+
+  /* create lrn memory descriptor on dst memory descriptor
+   *  from previos primitive */
+  let lrn_src_md = mkldnn.mkldnn_primitive_desc_query_memory_d(relu_dst_pd);
+
+  /* create a lrn */
+  let lrn_desc = mkldnn.mkldnn_lrn_forward_desc_create(
+    mkldnn.mkldnn_forward, mkldnn.mkldnn_lrn_across_channels, lrn_src_md, local_size, alpha, beta, k);
+
+  let lrn_pd = mkldnn.mkldnn_primitive_desc_create(lrn_desc, engine, 0);
+
+  let lrn_dst_pd = mkldnn.mkldnn_primitive_desc_query_pd(lrn_pd, mkldnn.mkldnn_query_dst_pd, 0);
+  let lrn_dst_memory = mkldnn.mkldnn_primitive_create(lrn_dst_pd, [], []);
+  mkldnn.mkldnn_memory_set_data_handle(lrn_dst_memory, lrn_dst_buffer);
+
+  let lrn_scratch_pd = mkldnn.mkldnn_primitive_desc_query_pd(lrn_pd, mkldnn.mkldnn_query_workspace_pd, 0);
+  let lrn_scratch_memory = mkldnn.mkldnn_primitive_create(lrn_scratch_pd, [], []);
+  let lrn_scratch_size = mkldnn.mkldnn_memory_primitive_desc_get_size(lrn_scratch_pd);
+  let lrn_scratch_buffer = mkldnn._malloc(lrn_scratch_size);
+  mkldnn._memset(lrn_scratch_buffer, 0, lrn_scratch_size);
+  mkldnn.mkldnn_memory_set_data_handle(lrn_scratch_memory, lrn_scratch_buffer);
+
+  /* finally create a lrn primitive */
+  let lrn = mkldnn.mkldnn_primitive_create(lrn_pd, [relu_dst_memory], [lrn_dst_memory, lrn_scratch_memory]);
+
+  /* AlexNet: pool
+   * {BATCH, 96, 55, 55} -> {BATCH, 96, 27, 27}
+   * kernel: {3, 3}
+   * strides: {2, 2}
+   */
+  let pool_dst_sizes = [BATCH, 96, 27, 27];
+  let pool_kernel = [3, 3];
+  let pool_strides = [2, 2];
+  let pool_padding = [0, 0];
+
+  let pool_dst_buffer = mkldnn._malloc(product(pool_dst_sizes)*Float32Array.BYTES_PER_ELEMENT);
+  mkldnn._memset(pool_dst_buffer, 0, product(pool_dst_sizes)*Float32Array.BYTES_PER_ELEMENT);
+
+  /* create pooling memory descriptor on dst descriptor
+   *  from previos primitive */
+  let pool_src_md = mkldnn.mkldnn_primitive_desc_query_memory_d(lrn_dst_pd);
+
+  /* create descriptors for dst pooling data */
+  let pool_dst_md = mkldnn.mkldnn_memory_desc_create(pool_dst_sizes, mkldnn.mkldnn_f32, mkldnn.mkldnn_any);
+
+  /* create memory for user data */
+  let pool_user_dst_memory = init_data_memory(pool_dst_sizes, mkldnn.mkldnn_nchw, mkldnn.mkldnn_f32, engine, net_dst);
+
+  /* create a pooling */
+  let pool_desc = mkldnn.mkldnn_pooling_forward_desc_create(
+      mkldnn.mkldnn_forward, mkldnn.mkldnn_pooling_max, pool_src_md, pool_dst_md, pool_strides,
+      pool_kernel, pool_padding, pool_padding, mkldnn.mkldnn_padding_zero);
+
+  let pool_pd = mkldnn.mkldnn_primitive_desc_create(pool_desc, engine, 0);
+
+  /* create memory for workspace */
+  let pool_indices_pd = mkldnn.mkldnn_primitive_desc_query_pd(pool_pd, mkldnn.mkldnn_query_workspace_pd, 0);
+  let pool_indices_memory = mkldnn.mkldnn_primitive_create(pool_indices_pd, [], []);
+  let pool_indices_size = mkldnn.mkldnn_memory_primitive_desc_get_size(pool_indices_pd);
+  let pool_indices_buffer = mkldnn._malloc(pool_indices_size);
+  mkldnn._memset(pool_indices_buffer, 0, pool_indices_size);
+  mkldnn.mkldnn_memory_set_data_handle(pool_indices_memory, pool_indices_buffer);
+
+  /* create reorder primitives between user data and pooling dsts
+   * if required */
+  let pool_dst_pd = mkldnn.mkldnn_primitive_desc_query_pd(pool_pd, mkldnn.mkldnn_query_dst_pd, 0);
+  [pool_internal_dst_memory, pool_reorder_dst] = prepare_reorder(pool_user_dst_memory, pool_dst_pd, 0, pool_dst_buffer);
+
+  let pool_dst_memory = pool_internal_dst_memory ? pool_internal_dst_memory : pool_user_dst_memory;
+
+  /* finally create a pooling primitive */
+  let pool = mkldnn.mkldnn_primitive_create(pool_pd, [lrn_dst_memory], [pool_dst_memory, pool_indices_memory]);
+
   /* build a simple net */
-  let net = [conv, relu];
+  let net = [conv, relu, lrn, pool];
   let stream = mkldnn.mkldnn_stream_create(mkldnn.mkldnn_eager);
   console.log(`stream: ${stream}`);
   let start = performance.now();
@@ -181,6 +269,13 @@ function main() {
   mkldnn.mkldnn_primitive_destroy(relu);
 
   mkldnn._free(relu_dst_buffer);
+
+  mkldnn.mkldnn_primitive_destroy(lrn_scratch_memory);
+  mkldnn.mkldnn_primitive_destroy(lrn_dst_memory);
+  mkldnn.mkldnn_primitive_destroy(lrn);
+
+  mkldnn._free(lrn_scratch_buffer);
+  mkldnn._free(lrn_dst_buffer);
 
   mkldnn.mkldnn_engine_destroy(engine);
 }
