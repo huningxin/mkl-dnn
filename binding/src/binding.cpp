@@ -202,6 +202,21 @@ namespace utils {
     int mkldnn_stream_destroy_helper(intptr_t stream) {
         return (int)mkldnn_stream_destroy((mkldnn_stream_t)stream);
     }
+
+    intptr_t mkldnn_primitive_desc_query_memory_d_helper(intptr_t primitive_desc) {
+        return (intptr_t)mkldnn_primitive_desc_query_memory_d((const_mkldnn_primitive_desc_t)primitive_desc);
+    }
+
+    intptr_t mkldnn_eltwise_forward_desc_create_helper(int prop_kind, int alg_kind, intptr_t data_desc, float alpha, float beta) {
+        mkldnn_eltwise_desc_t* eltwise_desc = new mkldnn_eltwise_desc_t;
+        mkldnn_status_t status = mkldnn_eltwise_forward_desc_init(eltwise_desc, (mkldnn_prop_kind_t)prop_kind,
+            (mkldnn_alg_kind_t)alg_kind, (const mkldnn_memory_desc_t*)data_desc, alpha, beta);
+        if (status != mkldnn_success) {
+            LOG_STATUS(status);
+            return 0;
+        }
+        return (intptr_t)eltwise_desc;
+    }
 }
 
 EMSCRIPTEN_BINDINGS(mkldnn)
@@ -326,4 +341,6 @@ EMSCRIPTEN_BINDINGS(mkldnn)
     function("mkldnn_stream_submit", &utils::mkldnn_stream_submit_helper, allow_raw_pointers());
     function("mkldnn_stream_wait", &utils::mkldnn_stream_wait_helper, allow_raw_pointers());
     function("mkldnn_stream_destroy", &utils::mkldnn_stream_destroy_helper, allow_raw_pointers());
+    function("mkldnn_primitive_desc_query_memory_d", &utils::mkldnn_primitive_desc_query_memory_d_helper, allow_raw_pointers());
+    function("mkldnn_eltwise_forward_desc_create", &utils::mkldnn_eltwise_forward_desc_create_helper, allow_raw_pointers());
 }

@@ -53,9 +53,9 @@ function main() {
   let net_dst = mkldnn._malloc(BATCH*96*27*27*Float32Array.BYTES_PER_ELEMENT);
 
   /* AlexNet: conv
-  * {BATCH, 3, 227, 227} (x) {96, 3, 11, 11} -> {BATCH, 96, 55, 55}
-  * strides: {4, 4}
-  */
+   * {BATCH, 3, 227, 227} (x) {96, 3, 11, 11} -> {BATCH, 96, 55, 55}
+   * strides: {4, 4}
+   */
   let conv_src_sizes = [BATCH, 3, 227, 227];
   let conv_weights_sizes = [96, 3, 11, 11];
   let conv_bias_sizes = [96];
@@ -103,7 +103,7 @@ function main() {
   mkldnn.mkldnn_memory_set_data_handle(conv_internal_dst_memory, conv_dst_buffer);
 
   /* create reorder primitives between user data and convolution srcs
-     * if required */
+   * if required */
   let src_pd = mkldnn.mkldnn_primitive_desc_query_pd(conv_pd, mkldnn.mkldnn_query_src_pd, 0);
   [conv_internal_src_memory, conv_reorder_src] = prepare_reorder(conv_user_src_memory, src_pd, 1, conv_src_buffer);
   let weights_pd = mkldnn.mkldnn_primitive_desc_query_pd(conv_pd, mkldnn.mkldnn_query_weights_pd, 0);
@@ -115,8 +115,34 @@ function main() {
   /* finally create a convolution primitive */
   let conv = mkldnn.mkldnn_primitive_create(conv_pd, [conv_src_memory, conv_weights_memory, conv_user_bias_memory], [conv_internal_dst_memory]);
 
+  /* AlexNet: relu
+   * {BATCH, 96, 55, 55} -> {BATCH, 96, 55, 55}
+   */
+  let negative_slope = 1.0;
+  
+  let relu_dst_sizes = conv_dst_sizes;
+  let relu_dst_buffer = mkldnn._malloc(product(relu_dst_sizes)*Float32Array.BYTES_PER_ELEMENT);
+  mkldnn._memset(relu_dst_buffer, 0, product(relu_dst_sizes)*Float32Array.BYTES_PER_ELEMENT);
+
+  /* create relu memory descriptor on dst memory descriptor
+   * from previos primitive */
+  let conv_dst_pd = mkldnn.mkldnn_primitive_desc_query_pd(conv_pd, mkldnn.mkldnn_query_dst_pd, 0);
+  let relu_src_md = mkldnn.mkldnn_primitive_desc_query_memory_d(conv_dst_pd);
+
+  /* create a relu */
+  let relu_desc = mkldnn.mkldnn_eltwise_forward_desc_create(mkldnn.mkldnn_forward, mkldnn.mkldnn_eltwise_relu, relu_src_md, negative_slope, 0);
+
+  let relu_pd = mkldnn.mkldnn_primitive_desc_create(relu_desc, engine, 0);
+
+  let relu_dst_pd = mkldnn.mkldnn_primitive_desc_query_pd(relu_pd, mkldnn.mkldnn_query_dst_pd, 0);
+  let relu_dst_memory = mkldnn.mkldnn_primitive_create(relu_dst_pd, [], []);
+  mkldnn.mkldnn_memory_set_data_handle(relu_dst_memory, relu_dst_buffer);
+
+  /* finally create a relu primitive */
+  let relu = mkldnn.mkldnn_primitive_create(relu_pd, [conv_internal_dst_memory], [relu_dst_memory]);
+
   /* build a simple net */
-  let net = [conv];
+  let net = [conv, relu];
   let stream = mkldnn.mkldnn_stream_create(mkldnn.mkldnn_eager);
   console.log(`stream: ${stream}`);
   let start = performance.now();
@@ -150,6 +176,11 @@ function main() {
   mkldnn._free(conv_src_buffer);
   mkldnn._free(conv_weights_buffer);
   mkldnn._free(conv_dst_buffer);
+
+  mkldnn.mkldnn_primitive_destroy(relu_dst_memory);
+  mkldnn.mkldnn_primitive_destroy(relu);
+
+  mkldnn._free(relu_dst_buffer);
 
   mkldnn.mkldnn_engine_destroy(engine);
 }
