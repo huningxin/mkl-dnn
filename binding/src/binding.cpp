@@ -147,8 +147,60 @@ namespace utils {
     }
 
     intptr_t mkldnn_primitive_desc_query_pd_helper(intptr_t primitive_desc, int what, int index) {
-        return (intptr_t)mkldnn_primitive_desc_query_pd((const_mkldnn_primitive_desc_t)primitive_desc,
-                                                        (mkldnn_query_t)what, index);
+        return (intptr_t)mkldnn_primitive_desc_query_pd((const_mkldnn_primitive_desc_t)primitive_desc, (mkldnn_query_t)what, index);
+    }
+
+    intptr_t mkldnn_primitive_get_primitive_desc_helper(intptr_t primitive) {
+        const_mkldnn_primitive_desc_t primitive_desc;
+        mkldnn_status_t status = mkldnn_primitive_get_primitive_desc((const_mkldnn_primitive_t)primitive, &primitive_desc);
+        if (status != mkldnn_success) {
+            LOG_STATUS(status);
+            return 0;
+        }
+        return (intptr_t)primitive_desc;
+    }
+
+    bool mkldnn_memory_primitive_desc_equal_helper(intptr_t lhs, intptr_t rhs) {
+        return mkldnn_memory_primitive_desc_equal((const_mkldnn_primitive_desc_t)lhs, (const_mkldnn_primitive_desc_t)rhs) == 1;
+    }
+
+    intptr_t mkldnn_reorder_primitive_desc_create_helper(intptr_t input, intptr_t output) {
+        mkldnn_primitive_desc_t reorder_primitive_desc;
+        mkldnn_status_t status = mkldnn_reorder_primitive_desc_create(
+            &reorder_primitive_desc, (const_mkldnn_primitive_desc_t)input, (const_mkldnn_primitive_desc_t)output);
+        if (status != mkldnn_success) {
+            LOG_STATUS(status);
+            return 0;
+        }
+        return (intptr_t)reorder_primitive_desc;
+    }
+
+    intptr_t mkldnn_stream_create_helper(int stream_kind) {
+        mkldnn_stream_t stream;
+        mkldnn_status_t status = mkldnn_stream_create(&stream, (mkldnn_stream_kind_t)stream_kind);
+        if (status != mkldnn_success) {
+            LOG_STATUS(status);
+            return 0;
+        }
+        return (intptr_t)stream;
+    }
+
+    int mkldnn_stream_submit_helper(intptr_t stream, val js_primitives) {
+        std::vector<int> primitives_vec = vecFromJSArray<int>(js_primitives);
+        size_t n = primitives_vec.size();
+        mkldnn_primitive_t primitives[n];
+        for (int i = 0; i < n; ++i) {
+            primitives[i] = (mkldnn_primitive_t)primitives_vec[i];
+        }
+        return (int)mkldnn_stream_submit((mkldnn_stream_t)stream, n, primitives, NULL);
+    }
+
+    int mkldnn_stream_wait_helper(intptr_t stream, int block) {
+        return (int)mkldnn_stream_wait((mkldnn_stream_t)stream, block, NULL);
+    }
+
+    int mkldnn_stream_destroy_helper(intptr_t stream) {
+        return (int)mkldnn_stream_destroy((mkldnn_stream_t)stream);
     }
 }
 
@@ -247,6 +299,11 @@ EMSCRIPTEN_BINDINGS(mkldnn)
     constant("mkldnn_query_diff_dst_pd", (int)mkldnn_query_diff_dst_pd);
     constant("mkldnn_query_workspace_pd", (int)mkldnn_query_workspace_pd);
 
+    // mkldnn_stream_kind_t
+    constant("mkldnn_any_stream", (int)mkldnn_any_stream);
+    constant("mkldnn_eager", (int)mkldnn_eager);
+    constant("mkldnn_lazy", (int)mkldnn_lazy);
+
     // functions
     function("mkldnn_engine_create", &utils::mkldnn_engine_create_helper, allow_raw_pointers());
     function("mkldnn_engine_destroy", &utils::mkldnn_engine_destroy_helper, allow_raw_pointers());
@@ -262,4 +319,11 @@ EMSCRIPTEN_BINDINGS(mkldnn)
     function("mkldnn_convolution_forward_desc_destroy", &utils::mkldnn_convolution_forward_desc_destory_helper, allow_raw_pointers());
     function("mkldnn_primitive_desc_create", &utils::mkldnn_primitive_desc_create_helper, allow_raw_pointers());
     function("mkldnn_primitive_desc_query_pd", &utils::mkldnn_primitive_desc_query_pd_helper, allow_raw_pointers());
+    function("mkldnn_primitive_get_primitive_desc", &utils::mkldnn_primitive_get_primitive_desc_helper, allow_raw_pointers());
+    function("mkldnn_memory_primitive_desc_equal", &utils::mkldnn_memory_primitive_desc_equal_helper, allow_raw_pointers());
+    function("mkldnn_reorder_primitive_desc_create", &utils::mkldnn_reorder_primitive_desc_create_helper, allow_raw_pointers());
+    function("mkldnn_stream_create", &utils::mkldnn_stream_create_helper, allow_raw_pointers());
+    function("mkldnn_stream_submit", &utils::mkldnn_stream_submit_helper, allow_raw_pointers());
+    function("mkldnn_stream_wait", &utils::mkldnn_stream_wait_helper, allow_raw_pointers());
+    function("mkldnn_stream_destroy", &utils::mkldnn_stream_destroy_helper, allow_raw_pointers());
 }
