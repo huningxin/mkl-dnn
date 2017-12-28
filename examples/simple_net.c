@@ -25,6 +25,16 @@
 #include <malloc.h>
 #endif
 
+#include <sys/time.h>
+
+long long current_timestamp() {
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
+    // printf("milliseconds: %lld\n", milliseconds);
+    return milliseconds;
+}
+
 #define BATCH 8
 
 #define CHECK(f) do { \
@@ -427,8 +437,11 @@ mkldnn_status_t simple_net(){
 
     mkldnn_stream_t stream;
     CHECK(mkldnn_stream_create(&stream, mkldnn_eager));
+    long long start = current_timestamp();
     CHECK(mkldnn_stream_submit(stream, n, net, NULL));
     CHECK(mkldnn_stream_wait(stream, n, NULL));
+    long long end = current_timestamp();
+    printf("Elapsed: %lld ms\n", (end - start));
 
     /* clean-up */
     CHECK(mkldnn_primitive_desc_destroy(conv_pd));
