@@ -3,7 +3,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(${MKLDNN_JS} src/binding.cpp)
 set_property(TARGET ${MKLDNN_JS} PROPERTY CXX_STANDARD 11)
-set_target_properties(${MKLDNN_JS} PROPERTIES LINK_FLAGS "--bind -Wno-unused-command-line-argument")
+set_target_properties(${MKLDNN_JS} PROPERTIES LINK_FLAGS "-s WASM=1 --bind -Wno-unused-command-line-argument")
 target_link_libraries(${MKLDNN_JS} ${LIB_NAME})
 
 set(test_files "")
